@@ -1,19 +1,34 @@
+// Inicialización de PDF.js
+pdfjsLib.GlobalWorkerOptions.workerSrc =
+  "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js";
+
 const socket = io();
 let localStream;
 let peerConnections = {};
 let myRole = "";
 let myRoom = "";
 
-const rtcConfig = {
-  iceServers: [{ urls: "stun:stun.l.google.com:19302" }],
-};
+// Variables PDF
+let pdfDoc = null;
+let pageNum = 1;
+const canvas = document.getElementById("pdfCanvas");
+const ctx = canvas.getContext("2d");
+
+const rtcConfig = { iceServers: [{ urls: "stun:stun.l.google.com:19302" }] };
 
 const joinBtn = document.getElementById("joinBtn");
 const videoInput = document.getElementById("videoInput");
 const syncVideo = document.getElementById("syncVideo");
+const pdfInput = document.getElementById("pdfInput");
 
-// Variable para evitar bucles infinitos de sincronización entre ventanas
 let isSyncing = false;
+
+// CAMBIO DE LAYOUTS DE PANTALLA
+function changeLayout(layoutClass) {
+  const room = document.getElementById("room");
+  room.classList.remove("layout-1", "layout-2", "layout-3");
+  room.classList.add(layoutClass);
+}
 
 joinBtn.onclick = async () => {
   myRoom = document.getElementById("roomId").value;
@@ -22,7 +37,10 @@ joinBtn.onclick = async () => {
   document.getElementById("setup").classList.add("hidden");
   document.getElementById("room").classList.remove("hidden");
 
-  // Configurar eventos del video SOLO después de definir el rol
+  document.getElementById("roleBadge").innerText = myRole;
+  document.getElementById("roomBadge").innerText = `Sala: ${myRoom}`;
+  document.getElementById("myRoleTag").innerText = myRole;
+
   setupVideoSync();
 
   try {
@@ -32,30 +50,66 @@ joinBtn.onclick = async () => {
         autoGainControl: false,
         noiseSuppression: false,
       },
-      video: { width: 480, height: 360 },
+      video: { width: 320, height: 240 },
     });
   } catch (err) {
-    console.warn(
-      "No se detectó cámara/micrófono, continuando solo con datos...",
-      err,
-    );
+    console.warn("Audio/Video local no disponible:", err);
   }
 
   socket.emit("join-room", myRoom, myRole);
 };
 
-// Cargar video local
-videoInput.onchange = (e) => {
+// --- MOTOR PDF.JS ---
+pdfInput.onchange = (e) => {
   const file = e.target.files[0];
-  if (file) {
-    syncVideo.src = URL.createObjectURL(file);
+  if (file && file.type === "application/pdf") {
+    const fileReader = new FileReader();
+    fileReader.onload = function () {
+      const typedarray = new Uint8Array(this.result);
+      pdfjsLib.getDocument(typedarray).promise.then((pdf) => {
+        pdfDoc = pdf;
+        document.getElementById("pageCount").innerText = pdf.numPages;
+        pageNum = 1;
+        renderPage(pageNum);
+      });
+    };
+    fileReader.readAsArrayBuffer(file);
   }
 };
 
-// --- FUNCIÓN DE SINCRONIZACIÓN DE VIDEO ---
+function renderPage(num) {
+  if (!pdfDoc) return;
+  pdfDoc.getPage(num).then((page) => {
+    const viewport = page.getViewport({ scale: 1.5 });
+    canvas.height = viewport.height;
+    canvas.width = viewport.width;
+
+    const renderContext = { canvasContext: ctx, viewport: viewport };
+    page.render(renderContext);
+    document.getElementById("pageNum").innerText = num;
+  });
+}
+
+document.getElementById("prevPage").onclick = () => {
+  if (pageNum <= 1) return;
+  pageNum--;
+  renderPage(pageNum);
+};
+
+document.getElementById("nextPage").onclick = () => {
+  if (!pdfDoc || pageNum >= pdfDoc.numPages) return;
+  pageNum++;
+  renderPage(pageNum);
+};
+
+// --- SINCRONIZACIÓN VIDEO ---
+videoInput.onchange = (e) => {
+  const file = e.target.files[0];
+  if (file) syncVideo.src = URL.createObjectURL(file);
+};
+
 function setupVideoSync() {
   if (myRole === "engineer") {
-    // Si soy el ingeniero, transmito cada acción que hago sobre el reproductor
     syncVideo.onplay = () => emitVideoSync("play");
     syncVideo.onpause = () => emitVideoSync("pause");
     syncVideo.onseeked = () => emitVideoSync("seek");
@@ -64,45 +118,27 @@ function setupVideoSync() {
 
 function emitVideoSync(action) {
   if (isSyncing) return;
-  socket.emit("video-sync", {
-    action: action,
-    currentTime: syncVideo.currentTime,
-  });
+  socket.emit("video-sync", { action, currentTime: syncVideo.currentTime });
 }
 
-// ESCUCHAR COMANDOS DE VIDEO (Talento y Directora)
 socket.on("video-sync", (data) => {
-  // Solo los clientes que NO son ingeniero acatan la orden
   if (myRole !== "engineer") {
-    isSyncing = true; // Bloquea disparos accidentales
-
+    isSyncing = true;
     syncVideo.currentTime = data.currentTime;
-
-    if (data.action === "play") {
-      syncVideo
-        .play()
-        .catch((e) =>
-          console.log("El navegador requiere interacción previa para Play", e),
-        );
-    } else if (data.action === "pause") {
-      syncVideo.pause();
-    }
-
+    if (data.action === "play") syncVideo.play().catch(() => {});
+    if (data.action === "pause") syncVideo.pause();
     setTimeout(() => {
       isSyncing = false;
     }, 200);
   }
 });
 
-// --- LÓGICA WEBRTC (AUDIO/VIDEO CONEXIÓN) ---
+// --- WEBRTC Y SALA ---
 socket.on("user-connected", async ({ id, role }) => {
   const pc = createPeerConnection(id);
   peerConnections[id] = pc;
-
-  if (localStream) {
+  if (localStream)
     localStream.getTracks().forEach((track) => pc.addTrack(track, localStream));
-  }
-
   const offer = await pc.createOffer();
   await pc.setLocalDescription(offer);
   socket.emit("signal", { to: id, signal: offer });
@@ -113,11 +149,10 @@ socket.on("signal", async ({ from, signal }) => {
   if (!pc) {
     pc = createPeerConnection(from);
     peerConnections[from] = pc;
-    if (localStream) {
+    if (localStream)
       localStream
         .getTracks()
         .forEach((track) => pc.addTrack(track, localStream));
-    }
   }
 
   if (signal.type === "offer") {
@@ -134,18 +169,16 @@ socket.on("signal", async ({ from, signal }) => {
 
 function createPeerConnection(id) {
   const pc = new RTCPeerConnection(rtcConfig);
-
   pc.onicecandidate = (e) => {
-    if (e.candidate) {
+    if (e.candidate)
       socket.emit("signal", { to: id, signal: { candidate: e.candidate } });
-    }
   };
-
   pc.ontrack = (e) => {
     let container = document.getElementById(`peer-${id}`);
     if (!container) {
       container = document.createElement("div");
       container.id = `peer-${id}`;
+      container.className = "peer-card";
       const remoteMedia = document.createElement("video");
       remoteMedia.autoplay = true;
       remoteMedia.srcObject = e.streams[0];
@@ -153,6 +186,5 @@ function createPeerConnection(id) {
       document.getElementById("peersContainer").appendChild(container);
     }
   };
-
   return pc;
 }

@@ -1,20 +1,34 @@
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  font-family:
+    -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial,
+    sans-serif;
+  background: #121212;
+  color: #e0e0e0;
+  height: 100vh;
+  overflow: hidden;
+}
+
 .hidden {
   display: none !important;
 }
 
-body {
-  font-family: sans-serif;
-  background: #1e1e1e;
-  color: #fff;
-  padding: 20px;
-}
-
+/* Setup Modal */
 #setup {
-  max-width: 300px;
-  margin: 50px auto;
+  max-width: 320px;
+  margin: 100px auto;
+  padding: 24px;
+  background: #1e1e1e;
+  border-radius: 8px;
   display: flex;
   flex-direction: column;
-  gap: 10px;
+  gap: 15px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5);
 }
 
 input,
@@ -22,12 +36,185 @@ select,
 button {
   padding: 10px;
   border-radius: 4px;
-  border: none;
+  border: 1px solid #333;
+  background: #2a2a2a;
+  color: #fff;
+  font-size: 14px;
 }
 
 button {
-  background: #007acc;
-  color: white;
   cursor: pointer;
+  background: #0066cc;
+  border: none;
   font-weight: bold;
+}
+button:hover {
+  background: #0052a3;
+}
+
+/* Studio Layout Framework */
+#room {
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+}
+
+.studio-header {
+  height: 48px;
+  background: #1a1a1a;
+  border-bottom: 1px solid #2a2a2a;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 16px;
+}
+
+.badge {
+  background: #333;
+  padding: 4px 8px;
+  border-radius: 4px;
+  font-size: 12px;
+  margin-right: 8px;
+  text-transform: uppercase;
+}
+
+.layout-selector button {
+  background: #252525;
+  border: 1px solid #3d3d3d;
+  padding: 6px 12px;
+  font-size: 12px;
+}
+
+.workspace {
+  flex: 1;
+  display: grid;
+  gap: 12px;
+  padding: 12px;
+  overflow: hidden;
+}
+
+/* PANELS GENERAL CONFIG */
+.panel {
+  background: #181818;
+  border: 1px solid #282828;
+  border-radius: 6px;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.panel-header {
+  height: 36px;
+  background: #202020;
+  padding: 0 12px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-size: 13px;
+  border-bottom: 1px solid #282828;
+}
+
+.file-btn {
+  font-size: 11px;
+  width: 180px;
+  padding: 2px;
+}
+
+/* Video & PDF Elements */
+.video-wrapper,
+.pdf-wrapper {
+  flex: 1;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  background: #000;
+  overflow: auto;
+}
+
+video {
+  max-width: 100%;
+  max-height: 100%;
+}
+#pdfCanvas {
+  max-width: 100%;
+  height: auto;
+}
+
+.pdf-controls {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+.pdf-controls button {
+  padding: 2px 8px;
+}
+
+.peers-grid {
+  padding: 8px;
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.peer-card {
+  background: #222;
+  border-radius: 4px;
+  padding: 8px;
+  width: 120px;
+  text-align: center;
+  font-size: 11px;
+}
+
+/* --- TRES DISTRIBUCIONES (LAYOUTS) --- */
+
+/* LAYOUT 1: VIDEO FOCUS */
+.layout-1 .workspace {
+  grid-template-columns: 2fr 1fr;
+  grid-template-rows: 3fr 1fr;
+  grid-template-areas:
+    "video script"
+    "peers script";
+}
+.layout-1 .video-panel {
+  grid-area: video;
+}
+.layout-1 .script-panel {
+  grid-area: script;
+}
+.layout-1 .peers-panel {
+  grid-area: peers;
+}
+
+/* LAYOUT 2: SCRIPT FOCUS (Teleprompter) */
+.layout-2 .workspace {
+  grid-template-columns: 1fr 2fr;
+  grid-template-rows: 2fr 1fr;
+  grid-template-areas:
+    "video script"
+    "peers script";
+}
+.layout-2 .video-panel {
+  grid-area: video;
+}
+.layout-2 .script-panel {
+  grid-area: script;
+}
+.layout-2 .peers-panel {
+  grid-area: peers;
+}
+
+/* LAYOUT 3: BALANCED STUDIO GRID */
+.layout-3 .workspace {
+  grid-template-columns: 1fr 1fr 1fr;
+  grid-template-rows: 1fr;
+  grid-template-areas: "video script peers";
+}
+.layout-3 .video-panel {
+  grid-area: video;
+}
+.layout-3 .script-panel {
+  grid-area: script;
+}
+.layout-3 .peers-panel {
+  grid-area: peers;
 }

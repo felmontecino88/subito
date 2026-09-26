@@ -2,9 +2,11 @@
 <html lang="es">
   <head>
     <meta charset="UTF-8" />
-    <title>SessionLink MVP</title>
+    <title>SessionLink MVP - Studio</title>
     <link rel="stylesheet" href="styles.css" />
     <script src="/socket.io/socket.io.js"></script>
+    <!-- PDF.js via CDN para renderizado ligero de libreto -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
   </head>
   <body>
     <div id="setup">
@@ -23,20 +25,85 @@
       <button id="joinBtn">Entrar</button>
     </div>
 
-    <div id="room" class="hidden">
-      <div class="main-container">
-        <!-- Reproductor de Video e Integración de Guión -->
-        <div class="video-section">
-          <video id="syncVideo" controls width="640"></video>
-          <input type="file" id="videoInput" accept="video/mp4" />
+    <div id="room" class="hidden layout-1">
+      <!-- Clase dinámicas: layout-1, layout-2, layout-3 -->
+
+      <!-- Barra Superior de Control y Layouts -->
+      <header class="studio-header">
+        <div class="session-info">
+          <span id="roleBadge" class="badge"></span>
+          <span id="roomBadge" class="badge"></span>
         </div>
 
-        <!-- Video Feeds / Audio de Participantes -->
-        <div class="peers-section">
-          <h3>Participantes</h3>
-          <div id="peersContainer"></div>
+        <!-- Selector de Vistas / Layouts -->
+        <div class="layout-selector">
+          <button onclick="changeLayout('layout-1')" title="Enfoque Video">
+            🎬 Video Focus
+          </button>
+          <button onclick="changeLayout('layout-2')" title="Enfoque Libreto">
+            📜 Script Focus
+          </button>
+          <button onclick="changeLayout('layout-3')" title="Vista Balanceada">
+            🎛️ Balanced Grid
+          </button>
         </div>
-      </div>
+      </header>
+
+      <main class="workspace">
+        <!-- Panel 1: Video Sync -->
+        <section class="panel video-panel">
+          <div class="panel-header">
+            <h3>Sincronización de Video</h3>
+            <input
+              type="file"
+              id="videoInput"
+              accept="video/mp4"
+              class="file-btn"
+            />
+          </div>
+          <div class="video-wrapper">
+            <video id="syncVideo" controls></video>
+          </div>
+        </section>
+
+        <!-- Panel 2: Libreto / Script PDF -->
+        <section class="panel script-panel">
+          <div class="panel-header">
+            <h3>Libreto / Guión</h3>
+            <input
+              type="file"
+              id="pdfInput"
+              accept="application/pdf"
+              class="file-btn"
+            />
+            <div class="pdf-controls">
+              <button id="prevPage">◀</button>
+              <span
+                >Pág: <span id="pageNum">0</span> /
+                <span id="pageCount">0</span></span
+              >
+              <button id="nextPage">▶</button>
+            </div>
+          </div>
+          <div class="pdf-wrapper">
+            <canvas id="pdfCanvas"></canvas>
+          </div>
+        </section>
+
+        <!-- Panel 3: Participantes, Video Feeds y Ruteo Audio -->
+        <section class="panel peers-panel">
+          <div class="panel-header">
+            <h3>Sala & Monitoreo</h3>
+          </div>
+          <div id="peersContainer" class="peers-grid">
+            <!-- Mi propio micrófono/cámara y botones de Mute -->
+            <div class="peer-card local-peer">
+              <div class="peer-tag">Tú (<span id="myRoleTag"></span>)</div>
+              <button id="muteSelfBtn" class="action-btn">🎙️ Mute</button>
+            </div>
+          </div>
+        </section>
+      </main>
     </div>
 
     <script src="app.js"></script>
