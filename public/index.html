@@ -1,0 +1,44 @@
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="UTF-8" />
+    <title>SessionLink MVP</title>
+    <link rel="stylesheet" href="styles.css" />
+    <script src="/socket.io/socket.io.js"></script>
+  </head>
+  <body>
+    <div id="setup">
+      <h2>Entrar a la Sesión</h2>
+      <input
+        type="text"
+        id="roomId"
+        placeholder="ID de la sala (ej: dub-01)"
+        value="dub-01"
+      />
+      <select id="role">
+        <option value="engineer">Ingeniero (Host)</option>
+        <option value="talent">Talento / Locutor</option>
+        <option value="director">Directora</option>
+      </select>
+      <button id="joinBtn">Entrar</button>
+    </div>
+
+    <div id="room" class="hidden">
+      <div class="main-container">
+        <!-- Reproductor de Video e Integración de Guión -->
+        <div class="video-section">
+          <video id="syncVideo" controls width="640"></video>
+          <input type="file" id="videoInput" accept="video/mp4" />
+        </div>
+
+        <!-- Video Feeds / Audio de Participantes -->
+        <div class="peers-section">
+          <h3>Participantes</h3>
+          <div id="peersContainer"></div>
+        </div>
+      </div>
+    </div>
+
+    <script src="app.js"></script>
+  </body>
+</html>

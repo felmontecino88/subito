@@ -1,0 +1,33 @@
+.hidden {
+  display: none !important;
+}
+
+body {
+  font-family: sans-serif;
+  background: #1e1e1e;
+  color: #fff;
+  padding: 20px;
+}
+
+#setup {
+  max-width: 300px;
+  margin: 50px auto;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+input,
+select,
+button {
+  padding: 10px;
+  border-radius: 4px;
+  border: none;
+}
+
+button {
+  background: #007acc;
+  color: white;
+  cursor: pointer;
+  font-weight: bold;
+}
