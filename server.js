@@ -19,12 +19,17 @@ io.on("connection", (socket) => {
     socket.role = role;
     socket.to(roomId).emit("user-connected", { id: socket.id, role });
 
-    // Sincronización de Video (Solo el Ingeniero transmite la orden)
+    // Sincronización de Video
     socket.on("video-sync", (data) => {
       socket.to(roomId).emit("video-sync", data);
     });
 
-    // Señalización WebRTC (Offer, Answer, ICE Candidates)
+    // Sincronización de Libreto PDF (Ubicado dentro de la sala para correcto ruteo)
+    socket.on("pdf-sync", (data) => {
+      socket.to(roomId).emit("pdf-sync", data);
+    });
+
+    // Señalización WebRTC
     socket.on("signal", (data) => {
       io.to(data.to).emit("signal", {
         from: socket.id,

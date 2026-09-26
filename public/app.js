@@ -11,6 +11,7 @@ let myRoom = "";
 // Variables PDF
 let pdfDoc = null;
 let pageNum = 1;
+let autoSyncPdf = true;
 const canvas = document.getElementById("pdfCanvas");
 const ctx = canvas.getContext("2d");
 
@@ -71,6 +72,11 @@ pdfInput.onchange = (e) => {
         document.getElementById("pageCount").innerText = pdf.numPages;
         pageNum = 1;
         renderPage(pageNum);
+
+        // Notificar cambio de página inicial
+        if (myRole === "engineer" || myRole === "director") {
+          emitPdfSync(pageNum);
+        }
       });
     };
     fileReader.readAsArrayBuffer(file);
@@ -90,16 +96,48 @@ function renderPage(num) {
   });
 }
 
+// --- EMITIR CAMBIO DE PÁGINA VÍA WEBSOCKETS ---
+function emitPdfSync(page) {
+  socket.emit("pdf-sync", {
+    roomId: myRoom,
+    page: page,
+    senderRole: myRole,
+  });
+}
+
+// Controladores de botones Pág Anterior / Siguiente (Solo una única declaración)
 document.getElementById("prevPage").onclick = () => {
   if (pageNum <= 1) return;
   pageNum--;
   renderPage(pageNum);
+
+  if (myRole === "engineer" || myRole === "director") {
+    emitPdfSync(pageNum);
+  }
 };
 
 document.getElementById("nextPage").onclick = () => {
   if (!pdfDoc || pageNum >= pdfDoc.numPages) return;
   pageNum++;
   renderPage(pageNum);
+
+  if (myRole === "engineer" || myRole === "director") {
+    emitPdfSync(pageNum);
+  }
+};
+
+// --- ESCUCHAR SINCRONIZACIÓN DE PDF REMOTA ---
+socket.on("pdf-sync", (data) => {
+  if (autoSyncPdf && pdfDoc) {
+    if (data.page >= 1 && data.page <= pdfDoc.numPages) {
+      pageNum = data.page;
+      renderPage(pageNum);
+    }
+  }
+});
+
+document.getElementById("syncPdfCheck").onchange = (e) => {
+  autoSyncPdf = e.target.checked;
 };
 
 // --- SINCRONIZACIÓN VIDEO ---
